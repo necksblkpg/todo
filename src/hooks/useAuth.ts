@@ -82,4 +82,4 @@ export default function useAuth() {
     signInWithGoogle,
     signOut
   };
-} 
+}

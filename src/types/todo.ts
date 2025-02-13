@@ -50,4 +50,4 @@ export const CATEGORIES: Category[] = [
   { id: 'shopping', name: 'Shopping', color: '#10B981' },
   { id: 'health', name: 'Health', color: '#8B5CF6' },
   { id: 'finance', name: 'Finance', color: '#F59E0B' }
-]; 
+];

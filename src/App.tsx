@@ -11,40 +11,22 @@ function App() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   if (authLoading || projectsLoading) {
-    return <div>Laddar...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <span>Laddar...</span>
+      </div>
+    );
   }
 
   if (!user) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        padding: '20px'
-      }}>
-        <h1>Välkommen till Todo-appen</h1>
+      <div className="flex flex-col items-center justify-center h-screen p-5">
+        <h1 className="text-3xl font-bold mb-4">Välkommen till Todo-appen</h1>
         <button
           onClick={signInWithGoogle}
-          style={{
-            padding: '12px 24px',
-            fontSize: '16px',
-            backgroundColor: '#4285f4',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
         >
-          <img
-            src="https://www.google.com/favicon.ico"
-            alt="Google"
-            style={{ width: '20px', height: '20px' }}
-          />
+          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
           Logga in med Google
         </button>
       </div>
@@ -54,105 +36,58 @@ function App() {
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {user.photoURL && (
-            <img
-              src={user.photoURL}
-              alt={user.displayName || user.email}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%'
-              }}
-            />
-          )}
-          <span>Välkommen, {user.displayName || user.email}!</span>
+    <div className="min-h-screen bg-gray-100 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white shadow-lg p-6">
+        <div className="mb-8">
+          <h2 className="text-xl font-bold">Mina Projekt</h2>
+          <button
+            onClick={() => setSelectedProjectId(null)}
+            className={`block w-full text-left px-3 py-2 mt-2 rounded ${
+              selectedProjectId === null ? 'bg-blue-100' : 'hover:bg-gray-200'
+            }`}
+          >
+            Personliga Todos
+          </button>
+          {projects.map(project => (
+            <button
+              key={project.id}
+              onClick={() => setSelectedProjectId(project.id)}
+              className={`block w-full text-left px-3 py-2 mt-2 rounded ${
+                selectedProjectId === project.id ? 'bg-blue-100' : 'hover:bg-gray-200'
+              }`}
+            >
+              {project.name}
+            </button>
+          ))}
         </div>
-        <button
-          onClick={signOut}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#f44336',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Logga ut
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', gap: '20px' }}>
-        <div style={{ width: '300px' }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            marginBottom: '20px'
-          }}>
-            <h2 style={{ marginTop: 0, marginBottom: '15px' }}>Mina Projekt</h2>
-            <div style={{ marginBottom: '15px' }}>
-              <button
-                onClick={() => setSelectedProjectId(null)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  backgroundColor: selectedProjectId === null ? '#e3f2fd' : 'transparent',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '4px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  marginBottom: '5px'
-                }}
-              >
-                Personliga Todos
-              </button>
-              {projects.map(project => (
-                <button
-                  key={project.id}
-                  onClick={() => setSelectedProjectId(project.id)}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    backgroundColor: selectedProjectId === project.id ? '#e3f2fd' : 'transparent',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '4px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    marginBottom: '5px'
-                  }}
-                >
-                  {project.name}
-                </button>
-              ))}
-            </div>
-            <ProjectManager onProjectSelect={setSelectedProjectId} />
+        <ProjectManager onProjectSelect={setSelectedProjectId} />
+      </aside>
+      {/* Main content */}
+      <main className="flex-1 p-6">
+        <header className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">
+            {selectedProject ? selectedProject.name : 'Personliga Todos'}
+          </h1>
+          <div className="flex items-center gap-3">
+            {user.photoURL && (
+              <img
+                src={user.photoURL}
+                alt={user.displayName || user.email}
+                className="w-10 h-10 rounded-full"
+              />
+            )}
+            <span className="text-lg">{user.displayName || user.email}</span>
+            <button
+              onClick={signOut}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            >
+              Logga ut
+            </button>
           </div>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            <h2 style={{ marginTop: 0, marginBottom: '20px' }}>
-              {selectedProject ? selectedProject.name : 'Personliga Todos'}
-            </h2>
-            <TodoList projectId={selectedProjectId} />
-          </div>
-        </div>
-      </div>
-
+        </header>
+        <TodoList projectId={selectedProjectId} />
+      </main>
       <ProjectInvitations />
     </div>
   );

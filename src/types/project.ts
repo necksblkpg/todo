@@ -8,6 +8,7 @@ export interface Project {
   updatedAt: Date;
   ownerId: string;
   members: ProjectMember[];
+  membersIds: string[]; // Nytt fält för att underlätta queries
 }
 
 export interface ProjectMember {
@@ -37,4 +38,4 @@ export enum InvitationStatus {
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
   EXPIRED = 'EXPIRED'
-} 
+}

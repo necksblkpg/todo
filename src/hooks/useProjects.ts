@@ -23,7 +23,7 @@ export default function useProjects() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  // Lyssna på projekt där användaren är medlem
+  // Lyssna på projekt där användaren är medlem (via fältet membersIds)
   useEffect(() => {
     if (!user) {
       setProjects([]);
@@ -32,28 +32,24 @@ export default function useProjects() {
     }
 
     const projectsRef = collection(db, 'projects');
-    const q = query(
-      projectsRef,
-      where('ownerId', '==', user.id)
-    );
+    const q = query(projectsRef, where('membersIds', 'array-contains', user.id));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const projectsData = snapshot.docs.map(doc => {
         const data = doc.data();
-        console.log('Project data:', data); // För felsökning
         return {
           ...data,
           id: doc.id,
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
-          members: data.members.map((m: any) => ({
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+          members: data.members?.map((m: any) => ({
             ...m,
-            joinedAt: m.joinedAt.toDate()
-          }))
+            joinedAt: m.joinedAt?.toDate()
+          })) || [],
+          membersIds: data.membersIds || []
         };
       }) as Project[];
-      
-      console.log('Hämtade projekt:', projectsData); // För felsökning
+
       setProjects(projectsData);
       setLoading(false);
     });
@@ -89,39 +85,30 @@ export default function useProjects() {
   }, [user]);
 
   const createProject = async (name: string, description?: string) => {
-    if (!user) throw new Error('User must be logged in');
+    if (!user) throw new Error('Användare måste vara inloggad');
 
     try {
-      const member = {
-        userId: user.id,
-        role: ProjectRole.OWNER,
-        joinedAt: new Date()
-      };
-
+      const member = { userId: user.id, role: ProjectRole.OWNER, joinedAt: new Date() };
       const projectData = {
         name,
-        ...(description ? { description } : {}),  // Inkludera description endast om det finns
+        ...(description ? { description } : {}),
         createdAt: Timestamp.fromDate(new Date()),
         updatedAt: Timestamp.fromDate(new Date()),
         ownerId: user.id,
-        members: [
-          {
-            ...member,
-            joinedAt: Timestamp.fromDate(member.joinedAt)
-          }
-        ]
+        members: [{ ...member, joinedAt: Timestamp.fromDate(member.joinedAt) }],
+        membersIds: [user.id]
       };
 
       const docRef = await addDoc(collection(db, 'projects'), projectData);
       return docRef.id;
     } catch (error) {
-      console.error('Error creating project:', error);
+      console.error('Fel vid skapande av projekt:', error);
       throw error;
     }
   };
 
   const inviteToProject = async (projectId: string, userEmail: string) => {
-    if (!user) throw new Error('User must be logged in');
+    if (!user) throw new Error('Användare måste vara inloggad');
 
     try {
       // Hitta användaren med den angivna e-postadressen
@@ -130,21 +117,19 @@ export default function useProjects() {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        throw new Error('User not found');
+        throw new Error('Användare hittades inte');
       }
 
       const invitedUser = querySnapshot.docs[0];
       const project = projects.find(p => p.id === projectId);
       
-      if (!project) {
-        throw new Error('Project not found');
+      if (!project) throw new Error('Projektet hittades inte');
+
+      if (project.membersIds.includes(invitedUser.id)) {
+        throw new Error('Användaren är redan medlem i detta projekt');
       }
 
-      if (project.members.some(m => m.userId === invitedUser.id)) {
-        throw new Error('User is already a member of this project');
-      }
-
-      const invitation: Omit<ProjectInvitation, 'id'> = {
+      const invitation = {
         projectId,
         projectName: project.name,
         fromUserId: user.id,
@@ -160,90 +145,72 @@ export default function useProjects() {
         expiresAt: Timestamp.fromDate(invitation.expiresAt)
       });
     } catch (error) {
-      console.error('Error inviting to project:', error);
+      console.error('Fel vid inbjudan:', error);
       throw error;
     }
   };
 
   const handleInvitation = async (invitationId: string, accept: boolean) => {
-    if (!user) throw new Error('User must be logged in');
+    if (!user) throw new Error('Användare måste vara inloggad');
 
     try {
       const invitationRef = doc(db, 'projectInvitations', invitationId);
       const invitation = invitations.find(i => i.id === invitationId);
-
-      if (!invitation) {
-        throw new Error('Invitation not found');
-      }
+      if (!invitation) throw new Error('Inbjudan hittades inte');
 
       const status = accept ? InvitationStatus.ACCEPTED : InvitationStatus.REJECTED;
       await updateDoc(invitationRef, { status });
 
       if (accept) {
         const projectRef = doc(db, 'projects', invitation.projectId);
-        const member = {
-          userId: user.id,
-          role: ProjectRole.MEMBER,
-          joinedAt: Timestamp.fromDate(new Date())
-        };
-        
+        const member = { userId: user.id, role: ProjectRole.MEMBER, joinedAt: Timestamp.fromDate(new Date()) };
         await updateDoc(projectRef, {
-          members: arrayUnion(member)
+          members: arrayUnion(member),
+          membersIds: arrayUnion(user.id)
         });
       }
     } catch (error) {
-      console.error('Error handling invitation:', error);
+      console.error('Fel vid hantering av inbjudan:', error);
       throw error;
     }
   };
 
   const removeProjectMember = async (projectId: string, userId: string) => {
-    if (!user) throw new Error('User must be logged in');
+    if (!user) throw new Error('Användare måste vara inloggad');
 
     try {
       const project = projects.find(p => p.id === projectId);
-      if (!project) {
-        throw new Error('Project not found');
-      }
+      if (!project) throw new Error('Projektet hittades inte');
 
-      if (project.ownerId !== user.id) {
-        throw new Error('Only project owner can remove members');
-      }
-
-      if (userId === project.ownerId) {
-        throw new Error('Cannot remove project owner');
-      }
+      if (project.ownerId !== user.id) throw new Error('Endast projektägaren kan ta bort medlemmar');
+      if (userId === project.ownerId) throw new Error('Kan inte ta bort projektägaren');
 
       const projectRef = doc(db, 'projects', projectId);
       const memberToRemove = project.members.find(m => m.userId === userId);
       
       if (memberToRemove) {
         await updateDoc(projectRef, {
-          members: arrayRemove(memberToRemove)
+          members: arrayRemove(memberToRemove),
+          membersIds: arrayRemove(userId)
         });
       }
     } catch (error) {
-      console.error('Error removing project member:', error);
+      console.error('Fel vid borttagning av projektmedlem:', error);
       throw error;
     }
   };
 
   const deleteProject = async (projectId: string) => {
-    if (!user) throw new Error('User must be logged in');
+    if (!user) throw new Error('Användare måste vara inloggad');
 
     try {
       const project = projects.find(p => p.id === projectId);
-      if (!project) {
-        throw new Error('Project not found');
-      }
-
-      if (project.ownerId !== user.id) {
-        throw new Error('Only project owner can delete the project');
-      }
+      if (!project) throw new Error('Projektet hittades inte');
+      if (project.ownerId !== user.id) throw new Error('Endast projektägaren kan ta bort projektet');
 
       await deleteDoc(doc(db, 'projects', projectId));
     } catch (error) {
-      console.error('Error deleting project:', error);
+      console.error('Fel vid borttagning av projekt:', error);
       throw error;
     }
   };
@@ -258,4 +225,4 @@ export default function useProjects() {
     removeProjectMember,
     deleteProject
   };
-} 
+}

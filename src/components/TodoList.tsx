@@ -1,201 +1,62 @@
 import React, { useState } from 'react';
-import { CATEGORIES } from '../types/todo';
 import useTodos from '../hooks/useTodos';
-import ProgressBar from './ProgressBar';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
-interface TodoListProps {
-  projectId?: string | null;
-}
+const TodoList: React.FC<{ projectId?: string | null }> = ({ projectId }) => {
+  const { todos, loading, addTodo, deleteTodo, toggleTodo } = useTodos(projectId || undefined);
+  const [newTask, setNewTask] = useState('');
+  const [newDescription, setNewDescription] = useState('');
 
-const TodoList: React.FC<TodoListProps> = ({ projectId }) => {
-  const {
-    todos,
-    loading,
-    filter,
-    setFilter,
-    sort,
-    setSort,
-    addTodo,
-    updateTodo,
-    deleteTodo,
-    toggleTodo,
-    assignTodo
-  } = useTodos(projectId || undefined);
-
-  const [newTodoTitle, setNewTodoTitle] = useState('');
-  const [newTodoDescription, setNewTodoDescription] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTodoTitle.trim()) return;
-
+    if (!newTask.trim()) return;
     try {
-      await addTodo(newTodoTitle.trim(), newTodoDescription.trim() || undefined);
-      setNewTodoTitle('');
-      setNewTodoDescription('');
+      await addTodo(newTask.trim(), newDescription.trim() || undefined);
+      setNewTask('');
+      setNewDescription('');
     } catch (error) {
-      console.error('Error adding todo:', error);
-      alert('Kunde inte lägga till todo');
+      console.error('Error adding task:', error);
     }
   };
 
-  if (loading) {
-    return <div>Laddar todos...</div>;
-  }
+  if (loading) return <div className="text-center py-10">Laddar todos...</div>;
 
   return (
-    <div>
-      <div style={{ marginBottom: '20px' }}>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="text"
-              value={newTodoTitle}
-              onChange={(e) => setNewTodoTitle(e.target.value)}
-              placeholder="Vad behöver göras?"
-              style={{
-                width: '100%',
-                padding: '8px',
-                marginBottom: '10px',
-                borderRadius: '4px',
-                border: '1px solid #ddd'
-              }}
-            />
-            <textarea
-              value={newTodoDescription}
-              onChange={(e) => setNewTodoDescription(e.target.value)}
-              placeholder="Beskrivning (valfritt)"
-              style={{
-                width: '100%',
-                padding: '8px',
-                borderRadius: '4px',
-                border: '1px solid #ddd',
-                minHeight: '100px'
-              }}
-            />
-          </div>
-          <button
-            type="submit"
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Lägg till
-          </button>
-        </form>
-      </div>
-
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-          <select
-            value={filter.completed === undefined ? '' : filter.completed.toString()}
-            onChange={(e) => setFilter({ ...filter, completed: e.target.value === '' ? undefined : e.target.value === 'true' })}
-            style={{
-              padding: '8px',
-              borderRadius: '4px',
-              border: '1px solid #ddd'
-            }}
-          >
-            <option value="">Alla</option>
-            <option value="false">Pågående</option>
-            <option value="true">Avklarade</option>
-          </select>
-
-          <select
-            value={sort.field}
-            onChange={(e) => setSort({ ...sort, field: e.target.value as any })}
-            style={{
-              padding: '8px',
-              borderRadius: '4px',
-              border: '1px solid #ddd'
-            }}
-          >
-            <option value="createdAt">Skapad</option>
-            <option value="updatedAt">Uppdaterad</option>
-            <option value="dueDate">Deadline</option>
-            <option value="priority">Prioritet</option>
-            <option value="title">Titel</option>
-          </select>
-
-          <button
-            onClick={() => setSort({ ...sort, direction: sort.direction === 'asc' ? 'desc' : 'asc' })}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#2196F3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            {sort.direction === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
-      </div>
-
+    <div className="bg-white p-6 rounded shadow">
+      <form onSubmit={handleAddTask} className="mb-6">
+        <input
+          type="text"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          placeholder="Vad behöver göras?"
+          className="w-full p-3 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <textarea
+          value={newDescription}
+          onChange={(e) => setNewDescription(e.target.value)}
+          placeholder="Beskrivning (valfritt)"
+          className="w-full p-3 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition">
+          Lägg till
+        </button>
+      </form>
       {todos.length === 0 ? (
-        <p>Inga todos att visa</p>
+        <p className="text-center text-gray-500">Inga todos att visa</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
+        <ul className="space-y-4">
           {todos.map(todo => (
-            <li
-              key={todo.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '10px',
-                marginBottom: '10px',
-                backgroundColor: 'white',
-                borderRadius: '4px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
-            >
+            <li key={todo.id} className="flex items-center p-4 border rounded hover:shadow transition">
               <input
                 type="checkbox"
                 checked={todo.completed}
                 onChange={() => toggleTodo(todo.id)}
-                style={{ marginRight: '10px' }}
+                className="mr-4 w-5 h-5"
               />
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  textDecoration: todo.completed ? 'line-through' : 'none',
-                  color: todo.completed ? '#666' : 'inherit'
-                }}>
+              <div className="flex-1">
+                <div className={`text-lg ${todo.completed ? 'line-through text-gray-500' : ''}`}>
                   {todo.title}
                 </div>
-                {todo.description && (
-                  <div style={{
-                    fontSize: '0.9em',
-                    color: '#666',
-                    marginTop: '5px'
-                  }}>
-                    {todo.description}
-                  </div>
-                )}
-                {todo.dueDate && (
-                  <div style={{
-                    fontSize: '0.9em',
-                    color: '#666',
-                    marginTop: '5px'
-                  }}>
-                    Deadline: {todo.dueDate.toLocaleDateString()}
-                  </div>
-                )}
-                {todo.assignedTo && (
-                  <div style={{
-                    fontSize: '0.9em',
-                    color: '#666',
-                    marginTop: '5px'
-                  }}>
-                    Tilldelad till: {todo.assignedTo}
-                  </div>
-                )}
+                {todo.description && <div className="text-sm text-gray-600">{todo.description}</div>}
               </div>
               <button
                 onClick={() => {
@@ -203,15 +64,7 @@ const TodoList: React.FC<TodoListProps> = ({ projectId }) => {
                     deleteTodo(todo.id);
                   }
                 }}
-                style={{
-                  padding: '4px 8px',
-                  backgroundColor: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  marginLeft: '10px'
-                }}
+                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
               >
                 Ta bort
               </button>
@@ -223,4 +76,4 @@ const TodoList: React.FC<TodoListProps> = ({ projectId }) => {
   );
 };
 
-export default TodoList; 
+export default TodoList;
