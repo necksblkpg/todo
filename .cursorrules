@@ -1,0 +1,50 @@
+# Todo App Progress
+
+## Completed Tasks
+[X] Skapa grundläggande Vite + React projekt
+[X] Installera och konfigurera Firebase
+[X] Skapa Firebase projekt och config
+[X] Implementera grundläggande UI komponenter
+[X] Implementera CRUD operationer för todos
+[X] Styla applikationen med inline styles
+[X] Implementera redigering av todos
+[X] Implementera filtrering och sortering
+[X] Implementera progress tracking
+[X] Implementera kategorier
+[X] Implementera tags
+[X] Implementera keyboard shortcuts
+[X] Implementera animationer
+
+## In Progress
+[X] Implementera deadlines
+[X] Implementera drag and drop
+[X] Implementera multi-user support
+[ ] Implementera projekt och projektdelning
+
+## Pending Tasks
+[ ] Implementera responsiv design
+[ ] Implementera tillgänglighet
+[ ] Implementera dark mode
+[ ] Optimera prestanda
+
+## Senaste Ändringar
+- Skapade custom hook (useTodos) för att hantera todo-logiken
+- Skapade TodoList-komponent som använder custom hook
+- Uppdaterade App.tsx för att använda nya TodoList-komponenten
+- Implementerade kategorier och tags för todos
+- La till filtrering och sortering
+- La till progress tracking
+- Förbättrade UI/UX med animationer och keyboard shortcuts
+- La till deadlines för todos
+- La till drag and drop funktionalitet
+- La till multi-user support med autentisering
+
+## Nästa Steg
+1. Skapa projekttyper och Firestore-schema
+2. Implementera projekthantering (CRUD)
+3. Implementera projektdelning och inbjudningar
+4. Uppdatera UI för projektvy
+5. Förbättra responsiv design
+6. Lägga till tillgänglighetsförbättringar
+7. Implementera dark mode
+8. Optimera prestanda för stora listor 
